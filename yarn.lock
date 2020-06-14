@@ -6368,7 +6368,7 @@ execa@^3.3.0:
     signal-exit "^3.0.2"
     strip-final-newline "^2.0.0"
 
-execa@^4.0.2:
+execa@^4.0.0, execa@^4.0.2:
   version "4.0.2"
   resolved "https://registry.npm.taobao.org/execa/download/execa-4.0.2.tgz?cache=0&sync_timestamp=1590156647465&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Fexeca%2Fdownload%2Fexeca-4.0.2.tgz#ad87fb7b2d9d564f70d2b62d511bee41d5cbb240"
   integrity sha1-rYf7ey2dVk9w0rYtURvuQdXLskA=
@@ -9308,6 +9308,11 @@ lodash.templatesettings@^4.0.0:
   dependencies:
     lodash._reinterpolate "^3.0.0"
 
+lodash.toarray@^4.4.0:
+  version "4.4.0"
+  resolved "https://registry.npm.taobao.org/lodash.toarray/download/lodash.toarray-4.4.0.tgz#24c4bfcd6b2fba38bfd0594db1179d8e9b656561"
+  integrity sha1-JMS/zWsvuji/0FlNsRedjptlZWE=
+
 lodash.transform@^4.6.0:
   version "4.6.0"
   resolved "https://registry.npm.taobao.org/lodash.transform/download/lodash.transform-4.6.0.tgz#12306422f63324aed8483d3f38332b5f670547a0"
@@ -9858,6 +9863,13 @@ node-cache@^4.1.1:
   dependencies:
     clone "2.x"
     lodash "^4.17.15"
+
+node-emoji@^1.10.0:
+  version "1.10.0"
+  resolved "https://registry.npm.taobao.org/node-emoji/download/node-emoji-1.10.0.tgz#8886abd25d9c7bb61802a658523d1f8d2a89b2da"
+  integrity sha1-iIar0l2ce7YYAqZYUj0fjSqJsto=
+  dependencies:
+    lodash.toarray "^4.4.0"
 
 node-fetch@2.6.0, node-fetch@^2.1.2, node-fetch@^2.2.0, node-fetch@^2.6.0:
   version "2.6.0"
@@ -13758,6 +13770,13 @@ vue-cli-plugin-apollo@~0.22.2:
     nodemon "^2.0.4"
     subscriptions-transport-ws "^0.9.16"
     ts-node "^8.10.2"
+
+vue-cli-plugin-gh-pages-auto-deploy@~0.3.1:
+  version "0.3.1"
+  resolved "https://registry.npm.taobao.org/vue-cli-plugin-gh-pages-auto-deploy/download/vue-cli-plugin-gh-pages-auto-deploy-0.3.1.tgz#47160fad35b9ed40d7c6d43286b721b38e1fadac"
+  integrity sha1-RxYPrTW57UDXxtQyhrchs44fraw=
+  dependencies:
+    execa "^4.0.0"
 
 vue-cli-plugin-vuetify@~2.0.5:
   version "2.0.5"

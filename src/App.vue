@@ -102,13 +102,14 @@
 
 <script lang="ts">
 import Vue from "vue";
-import * as venn from "venn.js";
 import ApolloExample from "./components/ApolloExample.vue";
 import * as d3 from "d3";
 import { BaseType } from "d3";
 import { mapState } from "vuex";
 import { Anime, Seiyuu, VennDiagramData } from "./store";
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const venn = require("venn.js");
 export default Vue.extend({
   name: "App",
 
