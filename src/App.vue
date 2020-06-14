@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <v-navigation-drawer width="400" app>
+    <v-navigation-drawer width="400" app permanent>
       <v-list-item>
         <v-list-item-content>
           <v-list-item-title class="title">Seiyuu Navigator</v-list-item-title>
