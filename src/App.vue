@@ -1,43 +1,54 @@
 <template>
   <v-app>
-    <v-navigation-drawer width="400" app permanent>
+    <v-navigation-drawer width="400" app permanent :mini-variant.sync="mini">
       <v-list-item>
-        <v-list-item-content>
-          <v-list-item-title class="title">Seiyuu Navigator</v-list-item-title>
-          <v-list-item-subtitle class="title"
-            >声優ナビゲター</v-list-item-subtitle
-          >
-        </v-list-item-content>
+        <v-list-item-title v-if="!mini" class="title"
+          >Seiyuu Navigator</v-list-item-title
+        >
+        <v-list-item-title v-else class="title">声</v-list-item-title>
+        <v-list-item-subtitle class="title"
+          >声優ナビゲター</v-list-item-subtitle
+        >
+        <v-btn icon @click.stop="mini = !mini">
+          <v-icon>mdi-chevron-left</v-icon>
+        </v-btn>
       </v-list-item>
 
       <v-divider></v-divider>
 
       <v-list-item>
-        <v-list-item-content>
-          <v-text-field
+        <v-list-item-content
+          ><v-text-field
             @change="
               $store.dispatch('searchAnime', { anime: $event, apollo: $apollo })
             "
             label="Search Anime"
             solo
+            v-if="!mini"
             :loading="loadingResult"
             clearable
           ></v-text-field>
+
+          <v-btn v-else icon @click.stop="mini = !mini">
+            <v-icon>mdi-magnify</v-icon>
+          </v-btn>
         </v-list-item-content>
       </v-list-item>
+
       <v-list-item-group color="primary">
         <v-list-item
           v-for="item in searchResult"
           :key="item.id"
+          class="px-2"
           @click="
             $store.dispatch('selectAnime', { anime: item, apollo: $apollo })
           "
         >
           <v-list-item-avatar
             v-if="item.image"
-            :rounded="false"
-            :size="50"
-            tile
+            :rounded="mini ? undefined : false"
+            :size="mini ? 40 : 50"
+            :tile="!mini"
           >
             <v-img :src="item.image"></v-img>
           </v-list-item-avatar>
@@ -52,7 +63,7 @@
           </v-list-item-content>
         </v-list-item>
       </v-list-item-group>
-      <v-list-item v-if="selectedAnime.length > 0">
+      <v-list-item v-if="selectedAnime.length > 0 && !mini">
         <v-list-item-content>
           <v-list-item-title class="title">Selected Animes</v-list-item-title>
         </v-list-item-content>
@@ -60,14 +71,15 @@
       <v-list-item-group color="primary">
         <v-list-item
           v-for="item in selectedAnime"
+          class="px-2"
           :key="item.id"
           @click="$store.dispatch('selectAnime', { anime: item })"
         >
           <v-list-item-avatar
             v-if="item.image"
-            :rounded="false"
-            :size="50"
-            tile
+            :rounded="mini ? undefined : false"
+            :size="mini ? 40 : 50"
+            :tile="!mini"
           >
             <v-img :src="item.image"></v-img>
           </v-list-item-avatar>
@@ -86,16 +98,91 @@
     <!-- Sizes your content based upon application components -->
     <v-main>
       <!-- Provides the application the proper gutter -->
-      <v-container class="main" fluid>
-        <!-- If using vue-router -->
-        <!-- <router-view></router-view> -->
-        <div id="venn"></div>
-        <div id="venntooltip" style="opacity: 0"></div>
-      </v-container>
+
+      <!-- If using vue-router -->
+      <!-- <router-view></router-view> -->
       <v-container class="popup" fluid v-if="selectedAnime.length < 1">
         <h2 class="text-center">Welcome to Seiyuu Navigator !!</h2>
         <h4 class="text-center">Please select an Anime on the left</h4>
       </v-container>
+      <div
+        class="main"
+        fluid
+        v-bind:class="{ hidden: selectedAnime.length < 1 }"
+      >
+        <v-tabs v-model="mode" grow>
+          <v-tab>Venn Diagram</v-tab>
+          <v-tab>Table</v-tab>
+          <!-- <v-tab>Item Three</v-tab> -->
+        </v-tabs>
+        <v-tabs-items v-model="mode">
+          <v-tab-item eager>
+            <div class="tab-content">
+              <div id="venn"></div>
+              <div id="venntooltip" style="opacity: 0"></div>
+            </div>
+          </v-tab-item>
+          <v-tab-item eager>
+            <div class="tab-content">
+              <div class="scrollable" style="overflow-x: auto">
+                <v-data-table
+                  :headers="tableHeader"
+                  :items="tableItems"
+                  sort-by="animes"
+                  sort-desc
+                  disable-pagination
+                  fixed-header
+                  calculate-widths
+                  hide-default-footer
+                  :custom-filter="fuzzySearch"
+                  :loading="loadingResult"
+                  :search="search"
+                >
+                  <template v-slot:top>
+                    <v-text-field
+                      v-model="search"
+                      append-icon="mdi-magnify"
+                      label="Search"
+                      single-line
+                      class="mx-4"
+                      hide-details
+                    ></v-text-field>
+                  </template>
+                  <template
+                    v-for="anime in animesList"
+                    v-slot:[anime]="{ value }"
+                  >
+                    <!-- {{JSON.stringify(value)}} -->
+                    <div :key="anime">
+                      <v-avatar
+                        color="indigo"
+                        size="36"
+                        v-if="value && value.image"
+                      >
+                        <img
+                          :src="value.image"
+                          :alt="value.name"
+                          style="height: auto"
+                        />
+                      </v-avatar>
+                      <span
+                        v-if="value && value.name"
+                        style="padding-left: 4px"
+                        >{{ value.name }}</span
+                      >
+                    </div>
+                  </template>
+                </v-data-table>
+              </div>
+            </div>
+          </v-tab-item>
+          <v-tab-item eager>
+            <div class="tab-content">
+              <h1>Work in progress</h1>
+            </div>
+          </v-tab-item>
+        </v-tabs-items>
+      </div>
     </v-main>
   </v-app>
 </template>
@@ -106,8 +193,8 @@ import ApolloExample from "./components/ApolloExample.vue";
 import * as d3 from "d3";
 import { BaseType } from "d3";
 import { mapState } from "vuex";
-import { Anime, Seiyuu, VennDiagramData } from "./store";
-
+import { Anime, Seiyuu, VennDiagramData, Character } from "./store";
+import { uniqBy } from "lodash";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const venn = require("venn.js");
 export default Vue.extend({
@@ -118,7 +205,10 @@ export default Vue.extend({
   },
 
   data: () => ({
-    chart: venn.VennDiagram()
+    chart: venn.VennDiagram(),
+    mode: 0,
+    mini: false,
+    search: ""
   }),
 
   beforeDestroy: () => {
@@ -135,9 +225,118 @@ export default Vue.extend({
       apollo: this.$apollo
     });
   },
+  methods: {
+    fuzzySearch(value: any, search: string, item: any) {
+      if (!value?.name) return false;
+      if (value.name.toLowerCase().includes(search?.toLowerCase() ?? "")) {
+        console.log(value, search, item);
+      }
+      return value.name.toLowerCase().includes(search?.toLowerCase() ?? "");
+    }
+  },
+  computed: {
+    ...mapState(["searchResult", "selectedAnime", "loadingResult"]),
+    animesList() {
+      return [
+        "item.va",
+        ...(this.selectedAnime as Anime[]).map(
+          s => "item." + (s.title.english || s.title.native)
+        )
+      ];
+    },
+    tableHeader() {
+      return [
+        {
+          text: "Name",
+          value: "va",
+          width: 250
+        },
+        {
+          text: "Animes",
+          value: "animes",
+          divider: true,
+          width: 50,
+          align: "center"
+        },
+        ...(this.selectedAnime as Anime[]).map(s => ({
+          text: s.title.english || s.title.native,
+          value: s.title.english || s.title.native,
+          width: 250
+        }))
+      ];
+    },
+    tableItems() {
+      const seiyuus: Seiyuu[] = uniqBy(
+        (this.selectedAnime as Anime[])
+          .reduce(
+            (acc, anime) => [
+              ...new Set([
+                ...anime.characters
+                  .map(e =>
+                    JSON.parse(JSON.stringify((e.voiceActor as Seiyuu) ?? ""))
+                  )
+                  .filter(e => e !== undefined),
+                ...acc
+              ])
+            ],
+            [] as Seiyuu[]
+          )
+          .filter(e => e.name),
+        e => e.name.native || e.name.first
+      );
+      const rows = seiyuus.map(({ id, ...rest }) => {
+        const animes: {
+          title: Anime["title"];
+          character: Character;
+        }[] = (this.selectedAnime as Anime[])
+          .map(e => {
+            const c = e.characters.find(c => c.voiceActor?.id === id);
+            return (
+              c !== undefined && {
+                title: e.title,
+                character: c
+              }
+            );
+          })
+          .filter(
+            (
+              e
+            ): e is {
+              title: Anime["title"];
+              character: Character;
+              role: string;
+            } => e !== false
+          );
+        return {
+          animes,
+          ...rest
+        };
+      });
+      const res = rows.map(r => {
+        const res: {
+          [key: string]: string | { name: string; image?: string };
+        } = {
+          va: {
+            name: `${r.name?.first} ${r.name?.last ?? ""}`,
+            image: r.image.large || r.image.medium || undefined
+          },
+          animes: String(r.animes.length)
+        };
+        r.animes.forEach(a => {
+          res[a.title.english || a.title.native] = {
+            name: `${a.character.name.first ?? ""} ${a.character.name.last ??
+              ""}`,
+            image:
+              a.character.image.large || a.character.image.medium || undefined
+          };
+        });
+        return res;
+      });
+      return res;
+    }
+  },
   watch: {
     selectedAnime: function(val: Anime[]) {
-      console.log(val);
       const seiyuus = Object.fromEntries(
         val
           .reduce(
@@ -209,7 +408,6 @@ export default Vue.extend({
         div.attr("transform", d3.event.transform);
       }
 
-      console.log(JSON.parse(JSON.stringify(sets)));
       div
         .datum(JSON.parse(JSON.stringify(sets)))
         .call(this.chart)
@@ -296,8 +494,7 @@ export default Vue.extend({
           }
         });
     }
-  },
-  computed: mapState(["searchResult", "selectedAnime", "loadingResult"])
+  }
 });
 </script>
 
@@ -308,6 +505,9 @@ export default Vue.extend({
   align-items: stretch;
   justify-content: center;
   flex-direction: column;
+  .v-tabs {
+    flex-grow: 0;
+  }
 }
 #venn {
   min-height: 100%;
@@ -317,12 +517,15 @@ export default Vue.extend({
   justify-content: center;
 }
 
+.tab-content {
+  width: 100%;
+  height: calc(100vh - 48px);
+}
 #venntooltip {
   position: fixed;
   background-color: black;
   color: white;
   pointer-events: none;
-  padding: 4px;
   font-size: 1em;
 }
 
@@ -335,5 +538,9 @@ export default Vue.extend({
   align-items: stretch;
   justify-content: center;
   flex-direction: column;
+}
+
+.hidden {
+  display: none;
 }
 </style>

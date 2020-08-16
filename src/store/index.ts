@@ -97,7 +97,6 @@ export default new Vuex.Store<Store>({
             };
           })
         };
-        console.log(res);
         commit("setLoadingResult", false);
         commit("toggleSelectAnime", res);
       }

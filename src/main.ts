@@ -11,7 +11,6 @@ Vue.config.productionTip = false;
 
 Vue.use(VueApollo);
 
-console.log(apolloProvider);
 new Vue({
   router,
   store,

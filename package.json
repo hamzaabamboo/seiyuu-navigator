@@ -12,10 +12,12 @@
   "dependencies": {
     "@mdi/font": "^3.6.95",
     "@types/d3": "^5.7.2",
+    "@types/lodash": "^4.14.159",
     "apollo-boost": "^0.4.9",
     "core-js": "^3.6.5",
     "d3": "^5.16.0",
     "graphql": "^15.1.0",
+    "lodash": "^4.17.20",
     "register-service-worker": "^1.7.1",
     "roboto-fontface": "*",
     "venn.js": "^0.2.20",
@@ -24,7 +26,7 @@
     "vue-class-component": "^7.2.3",
     "vue-property-decorator": "^8.4.2",
     "vue-router": "^3.2.0",
-    "vuetify": "^2.2.11",
+    "vuetify": "^2.3.8",
     "vuex": "^3.4.0"
   },
   "devDependencies": {
