@@ -137,6 +137,7 @@
                   :custom-filter="fuzzySearch"
                   :loading="loadingResult"
                   :search="search"
+                  @contextmenu:row="setMenu"
                 >
                   <template v-slot:top>
                     <v-text-field
@@ -182,6 +183,28 @@
             </div>
           </v-tab-item>
         </v-tabs-items>
+        <v-menu
+          v-model="showMenu"
+          absolute
+          offset-y
+          :position-x="menuData ? menuData.x : 0"
+          :position-y="menuData ? menuData.y : 0"
+          style="max-width: 600px"
+        >
+          <v-list v-if="menuData">
+            <v-list-item
+              v-for="key in Object.keys(menuData.item).filter(
+                k => menuData.item[k] && menuData.item[k].name && k !== 'animes'
+              )"
+              :key="key"
+              @click="searchGoogle(menuData.item[key].name)"
+            >
+              <v-list-item-title v-if="menuData.item[key].name"
+                >Search for {{ menuData.item[key].name }}</v-list-item-title
+              >
+            </v-list-item>
+          </v-list>
+        </v-menu>
       </div>
     </v-main>
   </v-app>
@@ -208,7 +231,9 @@ export default Vue.extend({
     chart: venn.VennDiagram(),
     mode: 0,
     mini: false,
-    search: ""
+    search: "",
+    showMenu: false as any,
+    menuData: undefined as any
   }),
 
   beforeDestroy: () => {
@@ -232,6 +257,23 @@ export default Vue.extend({
         console.log(value, search, item);
       }
       return value.name.toLowerCase().includes(search?.toLowerCase() ?? "");
+    },
+    setMenu(event: MouseEvent, value: any) {
+      this.menuData = false;
+      this.$nextTick(() => {
+        this.showMenu = true;
+        this.menuData = {
+          x: event.clientX,
+          y: event.clientY,
+          item: value.item
+        };
+      });
+      event.preventDefault();
+    },
+    searchGoogle(what: string) {
+      window.open(
+        "https://www.google.com/search?q=" + encodeURIComponent(what)
+      );
     }
   },
   computed: {
