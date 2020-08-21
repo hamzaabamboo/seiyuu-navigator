@@ -3,6 +3,7 @@ import Vuex from "vuex";
 import { ApolloClientMethods } from "vue-apollo/types/vue-apollo";
 import gql from "graphql-tag";
 import { searchAnimeQuery, getCharactersQuery } from "@/graphql/queries";
+import { getTitle } from "@/utils/data-utils";
 
 Vue.use(Vuex);
 
@@ -10,6 +11,7 @@ export default new Vuex.Store<Store>({
   state: {
     selectedAnime: [],
     searchResult: [],
+    recentAnime: [],
     loadingResult: false
   },
   mutations: {
@@ -25,8 +27,18 @@ export default new Vuex.Store<Store>({
         state.selectedAnime = state.selectedAnime.filter(
           a => a.id !== anime.id
         );
+        if (!state.recentAnime.find(a => a.id === anime.id)) {
+          const newArr = [anime, ...state.recentAnime];
+          if (newArr.length > 4) {
+            newArr.pop();
+          }
+          state.recentAnime = newArr;
+        }
       } else {
         state.selectedAnime = [...state.selectedAnime, anime];
+        if (state.recentAnime.find(a => a.id === anime.id)) {
+          state.recentAnime = state.recentAnime.filter(a => a.id !== anime.id);
+        }
       }
     }
   },
@@ -40,16 +52,16 @@ export default new Vuex.Store<Store>({
           page: 1
         }
       });
-      const result: AnimePreview[] = (data["Page"]["media"] as any[]).map<
-        AnimePreview
-      >((anime: any) => {
-        return {
-          id: anime.id,
-          title: anime.title,
-          image: anime.bannerImage,
-          pageInfo: anime.characters.pageInfo
-        };
-      });
+      const result: AnimePreview[] = (data["Page"]["media"] as any[])
+        .map<AnimePreview>((anime: any) => {
+          return {
+            id: anime.id,
+            title: anime.title,
+            image: anime.bannerImage,
+            pageInfo: anime.characters.pageInfo
+          };
+        })
+        .filter(e => getTitle(e));
       commit("setLoadingResult", false);
       commit("setSearchResult", result);
     },
@@ -95,7 +107,8 @@ export default new Vuex.Store<Store>({
                   }
                 : undefined
             };
-          })
+          }),
+          pageInfo: anime.pageInfo
         };
         commit("setLoadingResult", false);
         commit("toggleSelectAnime", res);
@@ -108,6 +121,7 @@ export default new Vuex.Store<Store>({
 export interface Store {
   selectedAnime: Anime[];
   searchResult: Anime[];
+  recentAnime: Anime[];
   loadingResult: boolean;
 }
 
@@ -132,6 +146,11 @@ export interface Anime {
   };
   image: string;
   characters: Character[];
+  pageInfo?: {
+    total: number;
+    currentPage: number;
+    lastPage: number;
+  };
 }
 
 export interface Character {
