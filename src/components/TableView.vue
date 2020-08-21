@@ -76,9 +76,6 @@ export default Vue.extend({
   methods: {
     fuzzySearch(value: any, search: string, item: any) {
       if (!value?.name) return false;
-      if (value.name.toLowerCase().includes(search?.toLowerCase() ?? "")) {
-        console.log(value, search, item);
-      }
       return value.name.toLowerCase().includes(search?.toLowerCase() ?? "");
     },
     setMenu(event: MouseEvent, value: any) {
