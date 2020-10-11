@@ -2,9 +2,13 @@
   <v-app>
     <v-navigation-drawer width="400" app permanent :mini-variant.sync="mini">
       <v-list-item>
-        <v-list-item-title v-if="!mini" class="title">Seiyuu Navigator</v-list-item-title>
+        <v-list-item-title v-if="!mini" class="title"
+          >Seiyuu Navigator</v-list-item-title
+        >
         <v-list-item-title v-else class="title">声</v-list-item-title>
-        <v-list-item-subtitle class="title">声優ナビゲター</v-list-item-subtitle>
+        <v-list-item-subtitle class="title"
+          >声優ナビゲター</v-list-item-subtitle
+        >
         <v-btn icon @click.stop="mini = !mini">
           <v-icon>mdi-chevron-left</v-icon>
         </v-btn>
@@ -12,105 +16,15 @@
 
       <v-divider></v-divider>
 
-      <v-list-item>
-        <v-list-item-content>
-          <v-text-field
-            @change="
-              $store.dispatch('searchAnime', { anime: $event, apollo: $apollo })
-            "
-            label="Search Anime"
-            solo
-            v-if="!mini"
-            :loading="loadingResult"
-            clearable
-          ></v-text-field>
+      <v-tabs v-model="searchMode" grow>
+        <v-tab>Anime</v-tab>
+        <v-tab>Seiyuu</v-tab>
+      </v-tabs>
 
-          <v-btn v-else icon @click.stop="mini = !mini">
-            <v-icon>mdi-magnify</v-icon>
-          </v-btn>
-        </v-list-item-content>
-      </v-list-item>
-
-      <v-list-item-group color="primary">
-        <v-list-item
-          v-for="item in searchResult"
-          :key="item.id"
-          class="px-2"
-          @click="
-            $store.dispatch('selectAnime', { anime: item, apollo: $apollo })
-          "
-        >
-          <v-list-item-avatar
-            v-if="item.image"
-            :rounded="mini ? undefined : false"
-            :size="mini ? 40 : 50"
-            :tile="!mini"
-          >
-            <v-img :src="item.image"></v-img>
-          </v-list-item-avatar>
-
-          <v-list-item-content>
-            <v-list-item-title v-html="item.title.english || item.title.native"></v-list-item-title>
-            <v-list-item-subtitle v-html="item.title.english ? item.title.native : ''"></v-list-item-subtitle>
-          </v-list-item-content>
-        </v-list-item>
-      </v-list-item-group>
-      <v-list-item-group color="primary">
-        <v-list-item v-if="selectedAnime.length > 0 && !mini">
-          <v-list-item-content>
-            <v-list-item-title class="title">Selected Animes</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item
-          v-for="item in selectedAnime"
-          class="px-2"
-          :key="item.id"
-          @click="$store.dispatch('selectAnime', { anime: item })"
-        >
-          <v-list-item-avatar
-            v-if="item.image"
-            :rounded="mini ? undefined : false"
-            :size="mini ? 40 : 50"
-            :tile="!mini"
-          >
-            <v-img :src="item.image"></v-img>
-          </v-list-item-avatar>
-
-          <v-list-item-content>
-            <v-list-item-title v-html="item.title.english || item.title.native"></v-list-item-title>
-            <v-list-item-subtitle v-html="item.title.english ? item.title.native : ''"></v-list-item-subtitle>
-          </v-list-item-content>
-        </v-list-item>
-      </v-list-item-group>
-      <v-list-item-group color="primary">
-        <v-list-item v-if="recentAnime.length > 0 && !mini">
-          <v-list-item-content>
-            <v-list-item-title class="title">Recent Animes</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item
-          v-for="item in recentAnime"
-          class="px-2"
-          :key="item.id"
-          @click="
-            $store.dispatch('selectAnime', { anime: item, apollo: $apollo })
-          "
-        >
-          <v-list-item-avatar
-            v-if="item.image"
-            :rounded="mini ? undefined : false"
-            :size="mini ? 40 : 50"
-            :tile="!mini"
-          >
-            <v-img :src="item.image"></v-img>
-          </v-list-item-avatar>
-
-          <v-list-item-content>
-            <v-list-item-title v-html="item.title.english || item.title.native"></v-list-item-title>
-            <v-list-item-subtitle v-html="item.title.english ? item.title.native : ''"></v-list-item-subtitle>
-          </v-list-item-content>
-        </v-list-item>
-      </v-list-item-group>
+      <v-tabs-items v-model="searchMode">
+        <v-tab-item><SearchAnime :mini="mini"/></v-tab-item>
+        <v-tab-item><SearchSeiyuu :mini="mini"/></v-tab-item>
+      </v-tabs-items>
     </v-navigation-drawer>
     <!-- Sizes your content based upon application components -->
     <v-main>
@@ -118,33 +32,63 @@
 
       <!-- If using vue-router -->
       <!-- <router-view></router-view> -->
-      <v-container class="popup" fluid v-if="selectedAnime.length < 1">
+      <v-container
+        class="popup"
+        fluid
+        v-if="selectedAnime.length < 1 && selectedSeiyuu.length < 1"
+      >
         <h2 class="text-center">Welcome to Seiyuu Navigator !!</h2>
         <h4 class="text-center">Please select an Anime on the left</h4>
       </v-container>
-      <div class="main" fluid v-bind:class="{ hidden: selectedAnime.length < 1 }">
-        <v-tabs v-model="mode" grow>
-          <v-tab>Venn Diagram</v-tab>
-          <v-tab>Table</v-tab>
-          <!-- <v-tab>Item Three</v-tab> -->
-        </v-tabs>
-        <v-tabs-items v-model="mode">
-          <v-tab-item eager>
-            <div class="tab-content">
-              <VennDiagram />
-            </div>
+      <div
+        class="main"
+        fluid
+        v-bind:class="{
+          hidden: selectedAnime.length < 1 && selectedSeiyuu.length < 1
+        }"
+      >
+        <v-tabs-items v-model="searchMode">
+          <v-tab-item :value="0">
+            <v-tabs v-model="animeMode" grow>
+              <v-tab :disabled="searchMode === 1" :value="0"
+                >Venn Diagram</v-tab
+              >
+              <v-tab :value="1">Table</v-tab>
+              <!-- <v-tab>Item Three</v-tab> -->
+            </v-tabs>
+            <v-tabs-items v-model="animeMode">
+              <v-tab-item :value="0" eager>
+                <div class="tab-content">
+                  <VennDiagram />
+                </div>
+              </v-tab-item>
+              <v-tab-item :value="1" eager>
+                <div class="tab-content">
+                  <TableView />
+                </div>
+              </v-tab-item>
+            </v-tabs-items>
           </v-tab-item>
-          <v-tab-item eager>
-            <div class="tab-content">
-              <TableView />
-            </div>
-          </v-tab-item>
-          <v-tab-item eager>
-            <div class="tab-content">
-              <h1>Work in progress</h1>
-            </div>
+          <v-tab-item>
+            <v-tabs v-model="seiyuuMode" grow>
+              <v-tab :value="1">Table</v-tab>
+              <!-- <v-tab>Item Three</v-tab> -->
+            </v-tabs>
+            <v-tabs-items v-model="seiyuuMode">
+              <v-tab-item eager>
+                <div class="tab-content">
+                  <SeiyuuTable />
+                </div>
+              </v-tab-item>
+            </v-tabs-items>
           </v-tab-item>
         </v-tabs-items>
+
+        <!-- <v-tab-items v-model="searchMode">
+          <v-tab-item>
+            
+          </v-tab-item>
+        </v-tab-items> -->
       </div>
     </v-main>
   </v-app>
@@ -154,23 +98,26 @@
 import Vue from "vue";
 import VennDiagram from "./components/VennDiagram.vue";
 import TableView from "./components/TableView.vue";
-import * as d3 from "d3";
-import { BaseType } from "d3";
+import SearchAnime from "./components/SearchAnime.vue";
+import SearchSeiyuu from "./components/SearchSeiyuu.vue";
+import SeiyuuTable from "./components/SeiyuuTable.vue";
 import { mapState } from "vuex";
-import { Anime, Seiyuu, Character } from "./store";
-import { uniqBy } from "lodash";
-import { getName, getTitle, getImage } from "@/utils/data-utils";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 export default Vue.extend({
   name: "App",
 
   components: {
     VennDiagram,
-    TableView
+    TableView,
+    SearchAnime,
+    SearchSeiyuu,
+    SeiyuuTable
   },
 
   data: () => ({
-    mode: 0,
+    searchMode: 0,
+    animeMode: 0,
+    seiyuuMode: 0,
     mini: false
   }),
 
@@ -179,14 +126,13 @@ export default Vue.extend({
       anime: "Revue Starlight",
       apollo: this.$apollo
     });
+    this.$store.dispatch("searchSeiyuu", {
+      seiyuu: "Sakura Ayane",
+      apollo: this.$apollo
+    });
   },
   computed: {
-    ...mapState([
-      "searchResult",
-      "selectedAnime",
-      "recentAnime",
-      "loadingResult"
-    ])
+    ...mapState(["selectedAnime", "selectedSeiyuu", "loadingResult"])
   }
 });
 </script>

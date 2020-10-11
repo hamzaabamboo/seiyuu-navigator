@@ -24,11 +24,11 @@
           hide-details
         ></v-text-field>
       </template>
-      <template v-for="anime in animesList" v-slot:[anime]="{ value }">
+      <template v-for="seiyuu in seiyuuList" v-slot:[seiyuu]="{ value }">
         <!-- {{JSON.stringify(value)}} -->
-        <div :key="anime">
+        <div :key="seiyuu">
           <v-avatar color="indigo" size="36" v-if="value && value.image">
-            <img :src="value.image" :alt="value.name" style="height: auto" />
+            <v-img :src="value.image" :alt="value.name" />
           </v-avatar>
           <span v-if="value && value.name" style="padding-left: 4px">{{
             value.name
@@ -68,8 +68,13 @@ import { Anime, Seiyuu, Character } from "../store";
 import { uniqBy } from "lodash";
 import { getName, getTitle, getImage } from "@/utils/data-utils";
 
+interface TableData {
+  name: Seiyuu["name"];
+  character: Character;
+  role: string;
+}
 export default Vue.extend({
-  name: "TableView",
+  name: "SeiyuuTable",
 
   data: () => ({
     search: "",
@@ -103,21 +108,21 @@ export default Vue.extend({
   computed: {
     ...mapState([
       "searchResult",
-      "selectedAnime",
+      "selectedSeiyuu",
       "recentAnime",
       "loadingResult"
     ]),
-    animesList() {
+    seiyuuList() {
       return [
-        "item.va",
-        ...(this.selectedAnime as Anime[]).map(s => "item." + getTitle(s))
+        "item.anime",
+        ...(this.selectedSeiyuu as Seiyuu[]).map(s => "item." + getName(s))
       ];
     },
     tableHeader() {
       return [
         {
-          text: "Name",
-          value: "va",
+          text: "Anime",
+          value: "anime",
           width: 250
         },
         {
@@ -127,79 +132,69 @@ export default Vue.extend({
           width: 50,
           align: "center"
         },
-        ...(this.selectedAnime as Anime[]).map(s => ({
-          text: getTitle(s),
-          value: getTitle(s),
+        ...(this.selectedSeiyuu as Seiyuu[]).map(s => ({
+          text: getName(s),
+          value: getName(s),
           width: 250
         }))
       ];
     },
     tableItems() {
-      const seiyuus: Seiyuu[] = uniqBy(
-        (this.selectedAnime as Anime[])
-          .reduce(
-            (acc, anime) => [
-              ...new Set([
-                ...anime.characters
-                  .map(e =>
-                    JSON.parse(JSON.stringify((e.voiceActor as Seiyuu) ?? ""))
-                  )
-                  .filter(e => e !== undefined),
-                ...acc
-              ])
-            ],
-            [] as Seiyuu[]
-          )
-          .filter(e => e.name),
-        e => e.name.native || e.name.first
+      const animes: Seiyuu["anime"] = uniqBy(
+        (this.selectedSeiyuu as Seiyuu[]).reduce(
+          (acc, seiyuu) => [
+            ...new Set([
+              ...(seiyuu.anime ?? [])
+                .map(e => JSON.parse(JSON.stringify(e ?? "")))
+                .filter(e => e !== undefined),
+              ...(acc ?? [])
+            ])
+          ],
+          [] as Seiyuu["anime"]
+        ),
+        e => getTitle(e)
       );
-      const rows = seiyuus.map(({ id, ...rest }) => {
-        const animes: {
-          title: Anime["title"];
+      const rows = animes.map(({ id, ...rest }) => {
+        const seiyuus: {
+          name: Seiyuu["name"];
           character: Character;
-        }[] = (this.selectedAnime as Anime[])
+        }[] = (this.selectedSeiyuu as Seiyuu[])
           .map(e => {
-            const c = e.characters.find(c => c.voiceActor?.id === id);
+            const c = e.anime?.find(c => c.id === id);
             return (
               c !== undefined && {
-                title: e.title,
-                character: c
+                name: e.name,
+                character: c.character[0]
               }
             );
           })
-          .filter(
-            (
-              e
-            ): e is {
-              title: Anime["title"];
-              character: Character;
-              role: string;
-            } => e !== false
-          );
+          .filter((e): e is TableData => e !== false);
         return {
           id,
-          animes,
+          seiyuus,
           ...rest
         };
       });
+      console.log(rows);
       const res = rows.map(r => {
         const res: {
           [key: string]: string | { name: string; image?: string };
         } = {
-          va: {
-            name: getName(r),
-            image: getImage(r)
+          anime: {
+            name: getTitle(r),
+            image: r.image ?? ""
           },
-          animes: String(r.animes.length)
+          animes: String(r.seiyuus.length)
         };
-        r.animes.forEach(a => {
-          res[getTitle(a)] = {
+        r.seiyuus.forEach(a => {
+          res[getName(a)] = {
             name: getName(a.character),
             image: getImage(a.character)
           };
         });
         return res;
       });
+      console.log(res);
       return res;
     }
   }
