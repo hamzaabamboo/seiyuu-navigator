@@ -88,7 +88,7 @@ export const getCharactersQuery = gql`
 export const getSeiyuuQuery = gql`
   query getSeiyuuQuery($id: Int, $page: Int) {
     Staff(id: $id) {
-      characters(page: $page, sort: ROLE) {
+      characters(page: $page) {
         edges {
           node {
             id

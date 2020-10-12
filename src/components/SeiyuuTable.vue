@@ -5,10 +5,9 @@
       :items="tableItems"
       sort-by="animes"
       sort-desc
-      disable-pagination
+      :items-per-page="50"
       fixed-header
       calculate-widths
-      hide-default-footer
       :custom-filter="fuzzySearch"
       :loading="loadingResult"
       :search="search"
@@ -45,6 +44,19 @@
       style="max-width: 600px"
     >
       <v-list v-if="menuData">
+        <v-list-item
+          @click="
+            $store.dispatch('addAnime', {
+              anime: menuData.item.anime.id,
+              apollo: $apollo
+            })
+          "
+          disabled
+        >
+          <v-list-item-title v-if="menuData.item.anime.name"
+            >Add {{ menuData.item.anime.name }} to list</v-list-item-title
+          >
+        </v-list-item>
         <v-list-item
           v-for="key in Object.keys(menuData.item).filter(
             k => menuData.item[k] && menuData.item[k].name && k !== 'animes'
@@ -178,11 +190,12 @@ export default Vue.extend({
       console.log(rows);
       const res = rows.map(r => {
         const res: {
-          [key: string]: string | { name: string; image?: string };
+          [key: string]: string | { name: string; image?: string; id?: string };
         } = {
           anime: {
             name: getTitle(r),
-            image: r.image ?? ""
+            image: r.image ?? "",
+            id: r.id
           },
           animes: String(r.seiyuus.length)
         };

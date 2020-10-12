@@ -5,10 +5,9 @@
       :items="tableItems"
       sort-by="animes"
       sort-desc
-      disable-pagination
+      :items-per-page="50"
       fixed-header
       calculate-widths
-      hide-default-footer
       :custom-filter="fuzzySearch"
       :loading="loadingResult"
       :search="search"

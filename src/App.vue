@@ -16,7 +16,7 @@
 
       <v-divider></v-divider>
 
-      <v-tabs v-model="searchMode" grow>
+      <v-tabs v-if="!mini" v-model="searchMode" grow>
         <v-tab>Anime</v-tab>
         <v-tab>Seiyuu</v-tab>
       </v-tabs>
