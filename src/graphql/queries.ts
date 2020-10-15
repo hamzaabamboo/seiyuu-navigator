@@ -49,9 +49,30 @@ export const searchSeiyuuQuery = gql`
   }
 `;
 
+export const getAnimeInfoQuery = gql`
+  query getAnimeInfoQuery($id: Int) {
+    Media(id: $id) {
+      id
+      title {
+        native
+        english
+      }
+      bannerImage
+      characters {
+        pageInfo {
+          total
+          currentPage
+          lastPage
+        }
+      }
+    }
+  }
+`;
+
 export const getCharactersQuery = gql`
   query getCharactersQuery($id: Int, $page: Int) {
     Media(id: $id) {
+      id
       characters(page: $page) {
         edges {
           node {
@@ -88,6 +109,7 @@ export const getCharactersQuery = gql`
 export const getSeiyuuQuery = gql`
   query getSeiyuuQuery($id: Int, $page: Int) {
     Staff(id: $id) {
+      id
       characters(page: $page) {
         edges {
           node {
@@ -117,6 +139,30 @@ export const getSeiyuuQuery = gql`
           }
           role
         }
+        pageInfo {
+          total
+          lastPage
+        }
+      }
+    }
+  }
+`;
+
+export const getSeiyuuInfoQuery = gql`
+  query getSeiyuuInfoQuery($id: Int) {
+    Staff(id: $id) {
+      id
+      name {
+        first
+        last
+        full
+        native
+      }
+      image {
+        large
+        medium
+      }
+      characters {
         pageInfo {
           total
           lastPage
