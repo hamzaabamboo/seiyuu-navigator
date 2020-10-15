@@ -102,6 +102,9 @@ import SearchAnime from "./components/SearchAnime.vue";
 import SearchSeiyuu from "./components/SearchSeiyuu.vue";
 import SeiyuuTable from "./components/SeiyuuTable.vue";
 import { mapState } from "vuex";
+import { isEqual } from "lodash";
+import { Anime, Seiyuu } from "./store";
+import { getAnimeFromId, getSeiyuuFromId } from "./graphql/fetch";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 export default Vue.extend({
   name: "App",
@@ -122,17 +125,61 @@ export default Vue.extend({
   }),
 
   mounted: function() {
+    const { animes, seiyuus } = this.$route.query;
+    if (animes || seiyuus) {
+      this.$store.dispatch("preload", {
+        animes: animes
+          ? (animes as string).split(",").filter(i => i)
+          : undefined,
+        seiyuus: seiyuus
+          ? (seiyuus as string).split(",").filter(i => i)
+          : undefined,
+        apollo: this.$apollo
+      });
+    }
     this.$store.dispatch("searchAnime", {
       anime: "Revue Starlight",
       apollo: this.$apollo
     });
     this.$store.dispatch("searchSeiyuu", {
-      seiyuu: "Sakura Ayane",
+      seiyuu: "Momoyo",
       apollo: this.$apollo
     });
   },
   computed: {
     ...mapState(["selectedAnime", "selectedSeiyuu", "loadingResult"])
+  },
+  methods: {
+    updateQuery() {
+      const newQuery = {
+        seiyuus:
+          this.selectedSeiyuu.length > 0
+            ? (this.selectedSeiyuu as Seiyuu[]).map(s => s.id).join(",")
+            : undefined,
+        animes:
+          this.selectedAnime.length > 0
+            ? (this.selectedAnime as Anime[]).map(s => s.id).join(",")
+            : undefined
+      };
+      if (
+        newQuery.seiyuus != this.$route.query.seiyuus ||
+        newQuery.animes != this.$route.query.animes
+      ) {
+        console.log(newQuery, this.$route.query);
+        this.$router.push({
+          path: this.$route.path,
+          query: newQuery
+        });
+      }
+    }
+  },
+  watch: {
+    selectedSeiyuu() {
+      this.updateQuery();
+    },
+    selectedAnime() {
+      this.updateQuery();
+    }
   }
 });
 </script>

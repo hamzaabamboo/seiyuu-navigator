@@ -1,14 +1,14 @@
 import Vue from "vue";
 import Vuex from "vuex";
 import { ApolloClientMethods } from "vue-apollo/types/vue-apollo";
-import gql from "graphql-tag";
 import {
-  searchAnimeQuery,
-  getCharactersQuery,
-  searchSeiyuuQuery,
-  getSeiyuuQuery
-} from "@/graphql/queries";
-import { getName, getTitle } from "@/utils/data-utils";
+  getAnimeFromId,
+  getAnimeFromSearch,
+  getSeiyuuFromId,
+  getSeiyuuFromSearch,
+  searchAnime,
+  searchSeiyuu
+} from "@/graphql/fetch";
 
 Vue.use(Vuex);
 
@@ -22,6 +22,10 @@ export default new Vuex.Store<Store>({
     loadingResult: false
   },
   mutations: {
+    setSelected(state, payload: { anime: Anime[]; seiyuu: Seiyuu[] }) {
+      state.selectedAnime = payload.anime;
+      state.selectedSeiyuu = payload.seiyuu;
+    },
     setLoadingResult(state, payload: boolean) {
       state.loadingResult = payload;
     },
@@ -65,25 +69,15 @@ export default new Vuex.Store<Store>({
   actions: {
     async searchAnime({ commit }, { anime, apollo }) {
       commit("setLoadingResult", true);
-      const { data } = await (apollo as ApolloClientMethods).query({
-        query: searchAnimeQuery,
-        variables: {
-          anime,
-          page: 1
-        }
-      });
-      const result: AnimePreview[] = (data["Page"]["media"] as any[])
-        .map<AnimePreview>((anime: any) => {
-          return {
-            id: anime.id,
-            title: anime.title,
-            image: anime.bannerImage,
-            pageInfo: anime.characters.pageInfo
-          };
-        })
-        .filter(e => getTitle(e));
+      const result = await searchAnime(anime, apollo);
       commit("setLoadingResult", false);
       commit("setSearchResult", result);
+    },
+    async searchSeiyuu({ commit }, { seiyuu, apollo }) {
+      commit("setLoadingResult", true);
+      const result = await searchSeiyuu(seiyuu, apollo);
+      commit("setLoadingResult", false);
+      commit("setSeiyuuResult", result);
     },
     async selectAnime(
       { commit, state },
@@ -93,43 +87,8 @@ export default new Vuex.Store<Store>({
         console.log("not found la");
         commit("toggleSelectAnime", anime);
       } else {
-        const promises = Array(anime.pageInfo.lastPage)
-          .fill(null)
-          .map((_, page) =>
-            apollo.query({
-              query: getCharactersQuery,
-              variables: {
-                id: anime.id,
-                page: page + 1
-              }
-            })
-          );
-        console.log("Total Pages : ", anime.pageInfo.lastPage);
         commit("setLoadingResult", true);
-        const data = (await Promise.all(promises))
-          .map(e => e.data["Media"])
-          .flatMap(e => e.characters.edges);
-        const res: Anime = {
-          id: anime.id,
-          title: anime.title,
-          image: anime.image,
-          characters: data.map<Character>((character: any) => {
-            return {
-              id: character.node.id,
-              name: character.node.name,
-              image: character.node.image,
-              role: character.role,
-              voiceActor: character.voiceActors[0]
-                ? {
-                    id: character.voiceActors[0].id,
-                    name: character.voiceActors[0].name,
-                    image: character.voiceActors[0].image
-                  }
-                : undefined
-            };
-          }),
-          pageInfo: anime.pageInfo
-        };
+        const res = await getAnimeFromSearch(anime, apollo);
         commit("setLoadingResult", false);
         commit("toggleSelectAnime", res);
       }
@@ -142,66 +101,29 @@ export default new Vuex.Store<Store>({
         console.log("not found la");
         commit("toggleSelectSeiyuu", seiyuu);
       } else {
-        const promises = Array(seiyuu.pageInfo.lastPage)
-          .fill(null)
-          .map((_, page) =>
-            apollo.query({
-              query: getSeiyuuQuery,
-              variables: {
-                id: seiyuu.id,
-                page: page + 1
-              }
-            })
-          );
-        console.log("Total Pages : ", seiyuu.pageInfo.lastPage);
         commit("setLoadingResult", true);
-        const data = (await Promise.all(promises)).flatMap(
-          e => e.data["Staff"]["characters"].edges
-        );
-        console.log(data);
-        const res: Seiyuu = {
-          id: seiyuu.id,
-          name: seiyuu.name,
-          image: seiyuu.image,
-          anime: data.flatMap(({ node, role }: any) => {
-            const character = {
-              id: node.id,
-              name: node.name,
-              image: node.image,
-              role: role
-            };
-            return node.media.nodes.map((m: any) => ({
-              id: m.id,
-              title: m.title,
-              image: m.bannerImage,
-              character: [character]
-            }));
-          })
-        };
+        const res = await getSeiyuuFromSearch(seiyuu, apollo);
         commit("setLoadingResult", false);
         commit("toggleSelectSeiyuu", res);
       }
     },
-    async searchSeiyuu({ commit }, { seiyuu, apollo }) {
+    async preload(
+      { commit },
+      {
+        animes,
+        seiyuus,
+        apollo
+      }: { animes?: string[]; seiyuus?: string[]; apollo: ApolloClientMethods }
+    ) {
       commit("setLoadingResult", true);
-      const { data } = await (apollo as ApolloClientMethods).query({
-        query: searchSeiyuuQuery,
-        variables: {
-          name: seiyuu
-        }
-      });
-      const result: Seiyuu[] = (data["Page"]["staff"] as any[])
-        .map<Seiyuu>((seiyuu: any) => {
-          return {
-            id: seiyuu.id,
-            name: seiyuu.name,
-            image: seiyuu.image,
-            pageInfo: seiyuu.characters.pageInfo
-          };
-        })
-        .filter(e => getName(e));
+      const animeRes = await Promise.all(
+        animes?.map(id => getAnimeFromId(id, apollo)) ?? []
+      );
+      const seiyuuRes = await Promise.all(
+        seiyuus?.map(id => getSeiyuuFromId(id, apollo)) ?? []
+      );
       commit("setLoadingResult", false);
-      commit("setSeiyuuResult", result);
+      commit("setSelected", { anime: animeRes, seiyuu: seiyuuRes });
     }
   },
   modules: {}
